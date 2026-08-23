@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Календарь смен</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #f2f2f7;
+    color: #1c1c1e;
+    min-height: 100vh;
+    padding: 16px;
+    display: flex;
+    justify-content: center;
+  }
+
+  .app {
+    width: 100%;
+    max-width: 420px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .card {
+    background: #ffffff;
+    border-radius: 14px;
+    padding: 14px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  }
+
+  .card-label {
+    font-size: 13px;
+    color: #8e8e93;
+    margin-bottom: 8px;
+  }
+
+  /* --- Заголовки блоков-разделов --- */
+  .section-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #8e8e93;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 10px 4px -4px;
+  }
+
+  input[type="datetime-local"], input[type="date"],
+  input[type="number"], input[type="time"] {
+    font-size: 17px;
+    padding: 10px 12px;
+    border: 1px solid #d1d1d6;
+    border-radius: 10px;
+    background: #fafafa;
+    font-family: inherit;
+  }
+
+  input[type="datetime-local"] { width: 100%; }
+
+  /* --- Сворачиваемые смены --- */
+  .toggle-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #ffffff;
+    border: none;
+    border-radius: 14px;
+    padding: 14px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    font-family: inherit;
+    font-size: 13px;
+    color: #8e8e93;
+    cursor: pointer;
+  }
+
+  .toggle-btn .chev {
+    font-size: 16px;
+    transition: transform 0.2s;
+  }
+  .toggle-btn.open .chev { transform: rotate(180deg); }
+
+  .collapsible { display: none; }
+  .collapsible.open { display: block; }
+
+  /* --- Календарь --- */
+  .cal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .cal-title { font-size: 17px; font-weight: 600; }
+
+  .arrow {
+    width: 40px; height: 40px;
+    border: none;
+    background: #e9e9eb;
+    border-radius: 10px;
+    font-size: 20px;
+    cursor: pointer;
+    color: #1c1c1e;
+  }
+  .arrow:active { background: #d1d1d6; }
+  .arrow:disabled { opacity: 0.3; }
+
+  .weekdays, .days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+  }
+
+  .weekdays div {
+    text-align: center;
+    font-size: 12px;
+    color: #8e8e93;
+    padding: 4px 0;
+  }
+
+  .day {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    font-size: 15px;
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    background: #ffffff;
+    border: 1px solid #e5e5ea;
+    transition: background 0.15s;
+  }
+
+  .day.empty { background: transparent; border: none; cursor: default; }
+  .day.outside { background: #e5e5ea; color: #aeaeb2; }
+
+  .day.blue   { background: #0a84ff; color: #ffffff; border-color: #0a84ff; }
+  .day.red    { background: #ff453a; color: #ffffff; border-color: #ff453a; }
+  .day.yellow { background: #ffd60a; color: #1c1c1e; border-color: #ffd60a; }
+
+  .day.blue.dim   { background: #a8cdff; color: #ffffff; border-color: #a8cdff; }
+  .day.red.dim    { background: #ffb3ae; color: #ffffff; border-color: #ffb3ae; }
+  .day.yellow.dim { background: #fff0a0; color: #8a7a1a; border-color: #fff0a0; }
+
+  .day.today { outline: 2px solid #1c1c1e; outline-offset: -2px; }
+
+  /* --- Результаты --- */
+  .result {
+    font-size: 34px;
+    font-weight: 700;
+    text-align: center;
+    padding: 6px 0 2px;
+  }
+
+  .result.neg { color: #ff3b30; }
+  .result.pos { color: #34c759; }
+
+  .result-sub {
+    text-align: center;
+    font-size: 13px;
+    color: #8e8e93;
+    padding-bottom: 4px;
+  }
+
+  /* --- Параметры смен --- */
+  .params {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .param-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .param-name {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    color: #3a3a3c;
+  }
+
+  .dot {
+    width: 14px; height: 14px;
+    border-radius: 4px;
+    display: inline-block;
+    flex-shrink: 0;
+  }
+  .dot.blue   { background: #0a84ff; }
+  .dot.red    { background: #ff453a; }
+  .dot.yellow { background: #ffd60a; }
+
+  .param-row input[type="number"] { width: 90px; }
+  .param-row input[type="time"]   { width: 100px; }
+
+  /* --- Машина / Аванс --- */
+  .car-dates {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .car-dates input[type="date"] { flex: 1; min-width: 0; }
+
+  .car-field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .car-field .param-name { flex: 1; }
+
+  .car-field input[type="number"] { width: 120px; }
+
+  /* --- Банковские карты --- */
+  .bank-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .bank-header .card-label { margin-bottom: 0; flex: 1; }
+
+  .refresh-btn {
+    border: none;
+    background: #e9e9eb;
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-size: 14px;
+    cursor: pointer;
+    color: #1c1c1e;
+    font-family: inherit;
+    white-space: nowrap;
+  }
+  .refresh-btn:active { background: #d1d1d6; }
+
+  .last-updated {
+    font-size: 11px;
+    color: #aeaeb2;
+    white-space: nowrap;
+  }
+
+  .bank-card-name {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  .bank-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .bank-box {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .bank-box label {
+    font-size: 12px;
+    color: #8e8e93;
+  }
+
+  .bank-box input {
+    width: 100%;
+    font-size: 16px;
+    padding: 8px 10px;
+    border: 1px solid #d1d1d6;
+    border-radius: 10px;
+    background: #fafafa;
+    font-family: inherit;
+  }
+
+  .bank-box input.neg { color: #ff3b30; }
+  .bank-box input.pos { color: #34c759; }
+
+  .bank-box.limit input {
+    background: #ececee;
+    color: #6d6d72;
+  }
+
+  /* Большая плашка (разница / дебетовая / итог по картам) */
+  .bank-big {
+    width: 100%;
+    font-size: 20px;
+    font-weight: 700;
+    padding: 12px;
+    border-radius: 10px;
+    text-align: center;
+    background: #f2f2f7;
+    margin-bottom: 6px;
+  }
+
+  .bank-big.neg { color: #ff3b30; }
+  .bank-big.pos { color: #34c759; }
+
+  .bank-big-label {
+    font-size: 12px;
+    color: #8e8e93;
+    text-align: center;
+    margin-bottom: 4px;
+  }
+
+  .bank-divider {
+    border: none;
+    border-top: 1px solid #e5e5ea;
+    margin: 12px 0;
+  }
+
+  /* --- Гранд-итог (самый заметный блок) --- */
+  .grand-card {
+    background: #1c1c1e;
+    color: #ffffff;
+    border-radius: 16px;
+    padding: 18px 14px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  }
+
+  .grand-card .card-label { color: #aeaeb2; }
+
+  .grand-result {
+    font-size: 42px;
+    font-weight: 800;
+    text-align: center;
+    padding: 4px 0 2px;
+  }
+
+  .grand-result.neg { color: #ff6961; }
+  .grand-result.pos { color: #5ce08a; }
+
+  .grand-sub {
+    text-align: center;
+    font-size: 12px;
+    color: #8e8e93;
+    padding-top: 6px;
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ==================== БЛОК 1: СМЕНЫ ==================== -->
+  <div class="section-title">Смены</div>
+
+  <!-- Дата и время отсчёта -->
+  <div class="card">
+    <div class="card-label">Дата и время отсчёта</div>
+    <input type="datetime-local" id="startDate">
+  </div>
+
+  <!-- Параметры смен (сворачиваемые) -->
+  <button class="toggle-btn" id="shiftsToggle">
+    <span>Смены: значение и время засчитывания</span>
+    <span class="chev">▾</span>
+  </button>
+  <div class="card collapsible" id="shiftsPanel">
+    <div class="params">
+      <div class="param-row">
+        <div class="param-name"><span class="dot blue"></span>Ночная смена</div>
+        <input type="number" id="blueValue" value="1000">
+        <input type="time" id="blueTime" value="00:00">
+      </div>
+      <div class="param-row">
+        <div class="param-name"><span class="dot red"></span>Дневная смена</div>
+        <input type="number" id="redValue" value="500">
+        <input type="time" id="redTime" value="00:00">
+      </div>
+      <div class="param-row">
+        <div class="param-name"><span class="dot yellow"></span>Полная дневная смена</div>
+        <input type="number" id="yellowValue" value="1500">
+        <input type="time" id="yellowTime" value="00:00">
+      </div>
+    </div>
+  </div>
+
+  <!-- Календарь -->
+  <div class="card">
+    <div class="cal-header">
+      <button class="arrow" id="prevBtn">‹</button>
+      <div class="cal-title" id="calTitle"></div>
+      <button class="arrow" id="nextBtn">›</button>
+    </div>
+    <div class="weekdays">
+      <div>Пн</div><div>Вт</div><div>Ср</div><div>Чт</div><div>Пт</div><div>Сб</div><div>Вс</div>
+    </div>
+    <div class="days" id="daysGrid"></div>
+  </div>
+
+  <!-- Аванс -->
+  <div class="card">
+    <div class="car-field" style="margin-bottom:0;">
+      <div class="param-name">Аванс</div>
+      <input type="number" id="advanceValue" value="0">
+    </div>
+  </div>
+
+  <!-- Итог по сменам -->
+  <div class="card">
+    <div class="card-label">Итог по сменам</div>
+    <div class="result-sub" id="earnedInfo"></div>
+    <div class="result" id="result">0</div>
+  </div>
+
+  <!-- ==================== БЛОК 2: МАШИНА ==================== -->
+  <div class="section-title">Машина</div>
+
+  <div class="card">
+    <div class="card-label">Период и сумма</div>
+    <div class="car-dates">
+      <input type="date" id="carStart">
+      <span style="color:#8e8e93;">—</span>
+      <input type="date" id="carEnd">
+    </div>
+    <div class="car-field">
+      <div class="param-name">Сумма</div>
+      <input type="number" id="carAmount" value="0">
+    </div>
+    <div class="result-sub" id="carDaysInfo"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">Итог по машине (расход)</div>
+    <div class="result" id="carResult">0</div>
+  </div>
+
+  <!-- ==================== БЛОК 3: КАРТЫ ==================== -->
+  <div class="section-title">Карты</div>
+
+  <div class="card">
+    <div class="bank-header">
+      <div class="card-label">Банковские карты</div>
+      <div class="last-updated" id="lastUpdated"></div>
+      <button class="refresh-btn" id="refreshBtn">Обновить</button>
+    </div>
+
+    <!-- Кредитная -->
+    <div class="bank-card-name">Кредитная Сбербанк</div>
+    <div class="bank-row">
+      <div class="bank-box">
+        <label>Баланс</label>
+        <input type="number" id="creditBalance" placeholder="0">
+      </div>
+      <div class="bank-box limit">
+        <label>Лимит</label>
+        <input type="number" id="creditLimit" placeholder="0">
+      </div>
+    </div>
+    <div class="bank-big-label">Разница</div>
+    <div class="bank-big" id="creditDiff">0</div>
+
+    <hr class="bank-divider">
+
+    <!-- Дебетовая -->
+    <div class="bank-card-name">Дебетовая Сбербанк</div>
+    <div class="bank-big-label">Баланс</div>
+    <div class="bank-big" id="debitBig">0</div>
+    <input type="number" id="debitBalance" placeholder="Ввести вручную" style="width:100%; margin-top:4px;">
+  </div>
+
+  <!-- Итог по картам -->
+  <div class="card">
+    <div class="card-label">Итог по картам</div>
+    <div class="result" id="cardsTotal">0</div>
+  </div>
+
+  <!-- ==================== ГРАНД-ИТОГ ==================== -->
+  <div class="grand-card">
+    <div class="card-label">Общий итог</div>
+    <div class="grand-result" id="grandTotal">0</div>
+    <div class="grand-sub" id="grandBreakdown"></div>
+  </div>
+
+</div>
+
+<script>
+  // ============ ТЕМЫ NTFY ============
+  const NTFY_CREDIT = "mfllxa-iklrta-lldddrds-a74c4d5emw4q1";
+  const NTFY_DEBIT  = "mtxxoy-sfvfft-fkf48ns-zfvf48n1r2dst2";
+
+  // ============ НАСТРОЙКИ ============
+  const MIN_MONTH = { year: 2026, month: 0 };
+  const MAX_MONTH = { year: 2027, month: 11 };
+
+  const COLOR_CYCLE = ["blue", "red", "yellow"];
+
+  const MONTH_NAMES = ["Январь","Февраль","Март","Апрель","Май","Июнь",
+                       "Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"];
+
+  // ============ СОСТОЯНИЕ ============
+  let marks = JSON.parse(localStorage.getItem("marks") || "{}");
+  let viewYear = null, viewMonth = null;
+
+  const $ = id => document.getElementById(id);
+  const startInput = $("startDate");
+
+  const FIELDS = ["startDate", "blueValue", "redValue", "yellowValue",
+                  "blueTime", "redTime", "yellowTime",
+                  "carStart", "carEnd", "carAmount", "advanceValue",
+                  "creditLimit", "creditBalance", "debitBalance"];
+  const DEFAULTS = { blueValue: "1000", redValue: "500", yellowValue: "1500",
+                     blueTime: "00:00", redTime: "00:00", yellowTime: "00:00",
+                     carAmount: "0", advanceValue: "0" };
+
+  FIELDS.forEach(f => {
+    const saved = localStorage.getItem(f);
+    $(f).value = saved !== null ? saved : (DEFAULTS[f] || "");
+  });
+
+  function save() {
+    localStorage.setItem("marks", JSON.stringify(marks));
+    FIELDS.forEach(f => localStorage.setItem(f, $(f).value));
+  }
+
+  function dayKey(y, m, d) {
+    return y + "-" + String(m + 1).padStart(2, "0") + "-" + String(d).padStart(2, "0");
+  }
+
+  function stripTime(date) {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  }
+
+  const DAY_MS = 1000 * 60 * 60 * 24;
+
+  function fmt(n) {
+    return n.toLocaleString("ru-RU", { maximumFractionDigits: 2 });
+  }
+
+  // Подсветка: минус — красный, плюс — зелёный, ноль — нейтрально
+  function paintSign(el, value) {
+    el.classList.toggle("neg", value < 0);
+    el.classList.toggle("pos", value > 0);
+  }
+
+  // ============ СМЕНЫ ============
+  function isCounted(y, m, d, color) {
+    if (!startInput.value) return false;
+    const start = stripTime(new Date(startInput.value));
+    const today = stripTime(new Date());
+    const day = new Date(y, m, d);
+
+    if (day < start || day > today) return false;
+    if (day < today) return true;
+
+    const t = $(color + "Time").value || "00:00";
+    const [hh, mm] = t.split(":").map(Number);
+    const now = new Date();
+    return now.getHours() > hh || (now.getHours() === hh && now.getMinutes() >= mm);
+  }
+
+  function isInRange(y, m, d) {
+    if (!startInput.value) return false;
+    const start = stripTime(new Date(startInput.value));
+    const today = stripTime(new Date());
+    const day = new Date(y, m, d);
+    return day >= start && day <= today;
+  }
+
+  function renderCalendar() {
+    $("calTitle").textContent = MONTH_NAMES[viewMonth] + " " + viewYear;
+
+    const atMin = (viewYear === MIN_MONTH.year && viewMonth === MIN_MONTH.month);
+    const atMax = (viewYear === MAX_MONTH.year && viewMonth === MAX_MONTH.month);
+    $("prevBtn").disabled = atMin;
+    $("nextBtn").disabled = atMax;
+
+    const grid = $("daysGrid");
+    grid.innerHTML = "";
+
+    const firstDay = new Date(viewYear, viewMonth, 1);
+    let offset = firstDay.getDay() - 1;
+    if (offset < 0) offset = 6;
+
+    const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+    const today = stripTime(new Date());
+
+    for (let i = 0; i < offset; i++) {
+      const empty = document.createElement("div");
+      empty.className = "day empty";
+      grid.appendChild(empty);
+    }
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const cell = document.createElement("div");
+      cell.className = "day";
+      cell.textContent = d;
+
+      const key = dayKey(viewYear, viewMonth, d);
+      const mark = marks[key];
+      const thisDay = new Date(viewYear, viewMonth, d);
+
+      if (mark) {
+        cell.classList.add(mark);
+        if (!isCounted(viewYear, viewMonth, d, mark)) cell.classList.add("dim");
+      } else if (!isInRange(viewYear, viewMonth, d)) {
+        cell.classList.add("outside");
+      }
+
+      if (thisDay.getTime() === today.getTime()) cell.classList.add("today");
+
+      cell.addEventListener("click", () => {
+        if (!marks[key]) {
+          marks[key] = COLOR_CYCLE[0];
+        } else {
+          const i = COLOR_CYCLE.indexOf(marks[key]);
+          if (i < COLOR_CYCLE.length - 1) marks[key] = COLOR_CYCLE[i + 1];
+          else delete marks[key];
+        }
+        save();
+        renderCalendar();
+        renderAll();
+      });
+
+      grid.appendChild(cell);
+    }
+  }
+
+  // ============ ПОДСЧЁТЫ (каждая функция ВОЗВРАЩАЕТ число) ============
+
+  // Смены: заработано минус аванс
+  function calcShifts() {
+    let counts = { blue: 0, red: 0, yellow: 0 };
+
+    for (const key in marks) {
+      const [y, m, d] = key.split("-").map(Number);
+      const color = marks[key];
+      if (isCounted(y, m - 1, d, color)) counts[color]++;
+    }
+
+    const earned = counts.blue   * (Number($("blueValue").value)   || 0)
+                 + counts.red    * (Number($("redValue").value)    || 0)
+                 + counts.yellow * (Number($("yellowValue").value) || 0);
+
+    const advance = Number($("advanceValue").value) || 0;
+    const final = earned - advance;
+
+    $("earnedInfo").textContent = "Заработано без учёта аванса: " + fmt(earned);
+    const el = $("result");
+    el.textContent = fmt(final);
+    paintSign(el, final);
+
+    return final;
+  }
+
+  // Машина: считаем положительную сумму, но ВОЗВРАЩАЕМ со знаком минус (расход)
+  function calcCar() {
+    const startVal = $("carStart").value;
+    const endVal   = $("carEnd").value;
+    const amount   = Number($("carAmount").value) || 0;
+
+    let total = 0;
+    let info = "";
+
+    if (startVal && endVal) {
+      const start = stripTime(new Date(startVal));
+      const end   = stripTime(new Date(endVal));
+      const today = stripTime(new Date());
+
+      const totalDays = Math.round((end - start) / DAY_MS);
+
+      if (totalDays < 1) {
+        info = "Конечная дата должна быть позже начальной";
+      } else if (amount <= 0) {
+        info = "Всего дней: " + totalDays + ". Введите сумму.";
+      } else {
+        const perDay = amount / totalDays;
+
+        let counted = 0;
+        if (today > start) {
+          counted = Math.round((today - start) / DAY_MS);
+          if (counted > totalDays) counted = totalDays;
+        }
+
+        total = counted * perDay;
+        info = "Всего дней: " + totalDays +
+               " • Засчитано: " + counted +
+               " • В день: " + fmt(perDay);
+      }
+    } else {
+      info = "Укажите обе даты";
+    }
+
+    $("carDaysInfo").textContent = info;
+    const el = $("carResult");
+    el.textContent = total > 0 ? "−" + fmt(total) : "0";
+    el.classList.toggle("neg", total > 0);
+    el.classList.remove("pos");
+
+    return -total;   // расход — отрицательное число
+  }
+
+  // Кредитная: разница = баланс − лимит (может быть ±)
+  function calcCreditDiff() {
+    const balStr = $("creditBalance").value;
+    const limStr = $("creditLimit").value;
+    const diffEl = $("creditDiff");
+
+    paintSign($("creditBalance"), Number(balStr));
+
+    if (balStr !== "" && limStr !== "") {
+      const diff = Number(balStr) - Number(limStr);
+      diffEl.textContent = (diff > 0 ? "+" : diff < 0 ? "−" : "") + fmt(Math.abs(diff));
+      paintSign(diffEl, diff);
+      return diff;
+    }
+
+    diffEl.textContent = "0";
+    diffEl.classList.remove("neg", "pos");
+    return 0;
+  }
+
+  // Дебетовая: просто баланс
+  function calcDebit() {
+    const v = Number($("debitBalance").value) || 0;
+    const el = $("debitBig");
+    el.textContent = fmt(v);
+    paintSign(el, v);
+    return v;
+  }
+
+  // Карты + гранд-итог
+  function renderBank(shifts, car, creditDiff, debit) {
+    const cardsTotal = creditDiff + debit;
+    const ctEl = $("cardsTotal");
+    ctEl.textContent = fmt(cardsTotal);
+    paintSign(ctEl, cardsTotal);
+
+    const grand = shifts + car + cardsTotal;
+    const gEl = $("grandTotal");
+    gEl.textContent = fmt(grand);
+    paintSign(gEl, grand);
+
+    $("grandBreakdown").textContent =
+      "Смены: " + fmt(shifts) +
+      " • Машина: " + fmt(car) +
+      " • Карты: " + fmt(cardsTotal);
+  }
+
+  // ============ NTFY ============
+  function parseBalance(text) {
+    if (!text) return null;
+    const m = String(text).replace(/\s+/g, "").match(/-?\d+[.,]?\d*/);
+    if (!m) return null;
+    const n = Number(m[0].replace(",", "."));
+    return isNaN(n) ? null : n;
+  }
+
+  async function fetchBalance(topic, inputId) {
+    const resp = await fetch("https://ntfy.sh/" + topic + "/json?poll=1");
+    const text = await resp.text();
+    const lines = text.trim().split("\n").filter(l => l.trim());
+
+    for (let i = lines.length - 1; i >= 0; i--) {
+      try {
+        const obj = JSON.parse(lines[i]);
+        if (obj.event !== "message") continue;
+        const num = parseBalance(obj.message);
+        if (num === null) continue;
+        $(inputId).value = num;
+        return true;
+      } catch (e) { /* пропускаем */ }
+    }
+    return false;
+  }
+
+  async function fetchAllBalances(showStatus) {
+    if (showStatus) $("refreshBtn").textContent = "…";
+    let okCredit = false, okDebit = false;
+    try { okCredit = await fetchBalance(NTFY_CREDIT, "creditBalance"); } catch (e) {}
+    try { okDebit  = await fetchBalance(NTFY_DEBIT,  "debitBalance");  } catch (e) {}
+
+    save();
+    renderAll();
+
+    const now = new Date();
+    const stamp = now.toLocaleDateString("ru-RU") + " " +
+                  now.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+
+    if (okCredit || okDebit) {
+      $("lastUpdated").textContent = "загружено " + stamp;
+      localStorage.setItem("lastBankUpdate", stamp);
+    } else {
+      $("lastUpdated").textContent = "не загрузилось " + stamp;
+    }
+
+    $("refreshBtn").textContent = "Обновить";
+  }
+
+  // ============ ОБЩИЙ ПЕРЕСЧЁТ ============
+  function renderAll() {
+    const shifts     = calcShifts();
+    const car        = calcCar();        // уже отрицательное
+    const creditDiff = calcCreditDiff();
+    const debit      = calcDebit();
+    renderBank(shifts, car, creditDiff, debit);
+  }
+
+  // ============ ПЕРЕКЛЮЧЕНИЕ МЕСЯЦЕВ ============
+  function shiftMonth(dir) {
+    viewMonth += dir;
+    if (viewMonth < 0)  { viewMonth = 11; viewYear--; }
+    if (viewMonth > 11) { viewMonth = 0;  viewYear++; }
+    renderCalendar();
+  }
+
+  $("prevBtn").addEventListener("click", () => shiftMonth(-1));
+  $("nextBtn").addEventListener("click", () => shiftMonth(1));
+
+  // ============ СВОРАЧИВАНИЕ СМЕН ============
+  $("shiftsToggle").addEventListener("click", () => {
+    $("shiftsPanel").classList.toggle("open");
+    $("shiftsToggle").classList.toggle("open");
+  });
+
+  // ============ КНОПКА ОБНОВЛЕНИЯ ============
+  $("refreshBtn").addEventListener("click", () => fetchAllBalances(true));
+
+  // ============ СОБЫТИЯ ============
+  FIELDS.forEach(f => {
+    $(f).addEventListener("input", () => { save(); renderCalendar(); renderAll(); });
+    $(f).addEventListener("change", () => { save(); renderCalendar(); renderAll(); });
+  });
+
+  setInterval(() => { renderCalendar(); renderAll(); fetchAllBalances(false); }, 30000);
+
+  // ============ СТАРТ ============
+  (function init() {
+    let base = startInput.value ? new Date(startInput.value) : new Date();
+    viewYear = Math.min(Math.max(base.getFullYear(), MIN_MONTH.year), MAX_MONTH.year);
+    viewMonth = base.getMonth();
+    if (viewYear === MAX_MONTH.year && viewMonth > MAX_MONTH.month) viewMonth = MAX_MONTH.month;
+
+    const lastStamp = localStorage.getItem("lastBankUpdate");
+    if (lastStamp) $("lastUpdated").textContent = "загружено " + lastStamp;
+
+    renderCalendar();
+    renderAll();
+    fetchAllBalances(false);
+  })();
+</script>
+
+</body>
+</html>
