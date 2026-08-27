@@ -23,7 +23,7 @@
     max-width: 420px;
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 12px;
   }
 
   .card {
@@ -39,14 +39,24 @@
     margin-bottom: 8px;
   }
 
-  /* --- Заголовки блоков-разделов --- */
+  /* --- Рамка вокруг целой группы --- */
+  .section {
+    border: 1.5px solid #d1d1d6;
+    border-radius: 18px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    background: #f8f8fa;
+  }
+
   .section-title {
     font-size: 13px;
     font-weight: 700;
     color: #8e8e93;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    margin: 10px 4px -4px;
+    margin: 2px 4px 0;
   }
 
   input[type="datetime-local"], input[type="date"],
@@ -61,7 +71,7 @@
 
   input[type="datetime-local"] { width: 100%; }
 
-  /* --- Сворачиваемые смены --- */
+  /* --- Сворачиваемые блоки --- */
   .toggle-btn {
     width: 100%;
     display: flex;
@@ -150,6 +160,13 @@
 
   .day.today { outline: 2px solid #1c1c1e; outline-offset: -2px; }
 
+  .shift-stats {
+    margin-top: 10px;
+    text-align: center;
+    font-size: 13px;
+    color: #3a3a3c;
+  }
+
   /* --- Результаты --- */
   .result {
     font-size: 34px;
@@ -203,7 +220,7 @@
   .param-row input[type="number"] { width: 90px; }
   .param-row input[type="time"]   { width: 100px; }
 
-  /* --- Машина / Аванс --- */
+  /* --- Машина / Аванс / Продажи --- */
   .car-dates {
     display: flex;
     align-items: center;
@@ -219,6 +236,8 @@
     gap: 8px;
     margin-bottom: 10px;
   }
+
+  .car-field:last-child { margin-bottom: 0; }
 
   .car-field .param-name { flex: 1; }
 
@@ -288,15 +307,11 @@
     font-family: inherit;
   }
 
-  .bank-box input.neg { color: #ff3b30; }
-  .bank-box input.pos { color: #34c759; }
-
   .bank-box.limit input {
     background: #ececee;
     color: #6d6d72;
   }
 
-  /* Большая плашка (разница / дебетовая / итог по картам) */
   .bank-big {
     width: 100%;
     font-size: 20px;
@@ -324,7 +339,15 @@
     margin: 12px 0;
   }
 
-  /* --- Гранд-итог (самый заметный блок) --- */
+  /* --- Дополнительные деньги --- */
+  .extra-value {
+    font-size: 20px;
+    font-weight: 700;
+  }
+  .extra-value.neg { color: #ff3b30; }
+  .extra-value.pos { color: #34c759; }
+
+  /* --- Гранд-итог --- */
   .grand-card {
     background: #1c1c1e;
     color: #ffffff;
@@ -351,6 +374,25 @@
     color: #8e8e93;
     padding-top: 6px;
   }
+
+  /* --- Резервная копия --- */
+  .backup-row {
+    display: flex;
+    gap: 8px;
+  }
+
+  .backup-btn {
+    flex: 1;
+    border: none;
+    background: #e9e9eb;
+    border-radius: 10px;
+    padding: 10px;
+    font-size: 14px;
+    cursor: pointer;
+    color: #1c1c1e;
+    font-family: inherit;
+  }
+  .backup-btn:active { background: #d1d1d6; }
 </style>
 </head>
 <body>
@@ -358,127 +400,155 @@
 <div class="app">
 
   <!-- ==================== БЛОК 1: СМЕНЫ ==================== -->
-  <div class="section-title">Смены</div>
+  <div class="section">
+    <div class="section-title">Смены</div>
 
-  <!-- Дата и время отсчёта -->
-  <div class="card">
-    <div class="card-label">Дата и время отсчёта</div>
-    <input type="datetime-local" id="startDate">
+    <div class="card">
+      <div class="card-label">Дата и время отсчёта</div>
+      <input type="datetime-local" id="startDate">
+    </div>
+
+    <button class="toggle-btn" id="shiftsToggle">
+      <span>Смены: значение и время засчитывания</span>
+      <span class="chev">▾</span>
+    </button>
+    <div class="card collapsible" id="shiftsPanel">
+      <div class="params">
+        <div class="param-row">
+          <div class="param-name"><span class="dot blue"></span>Ночная смена</div>
+          <input type="number" id="blueValue" value="1000">
+          <input type="time" id="blueTime" value="00:00">
+        </div>
+        <div class="param-row">
+          <div class="param-name"><span class="dot red"></span>Дневная смена</div>
+          <input type="number" id="redValue" value="500">
+          <input type="time" id="redTime" value="00:00">
+        </div>
+        <div class="param-row">
+          <div class="param-name"><span class="dot yellow"></span>Полная дневная смена</div>
+          <input type="number" id="yellowValue" value="1500">
+          <input type="time" id="yellowTime" value="00:00">
+        </div>
+      </div>
+    </div>
+
+    <!-- Календарь -->
+    <div class="card">
+      <div class="cal-header">
+        <button class="arrow" id="prevBtn">‹</button>
+        <div class="cal-title" id="calTitle"></div>
+        <button class="arrow" id="nextBtn">›</button>
+      </div>
+      <div class="weekdays">
+        <div>Пн</div><div>Вт</div><div>Ср</div><div>Чт</div><div>Пт</div><div>Сб</div><div>Вс</div>
+      </div>
+      <div class="days" id="daysGrid"></div>
+      <div class="shift-stats" id="shiftStats"></div>
+    </div>
+
+    <!-- Аванс и продажи (сворачиваемые одной кнопкой) -->
+    <button class="toggle-btn" id="advSalesToggle">
+      <span>Аванс и продажи</span>
+      <span class="chev">▾</span>
+    </button>
+    <div class="card collapsible" id="advSalesPanel">
+      <div class="car-field">
+        <div class="param-name">Аванс</div>
+        <input type="number" id="advanceValue" value="0">
+      </div>
+      <div class="car-field">
+        <div class="param-name">Продажи</div>
+        <input type="number" id="salesValue" value="0">
+      </div>
+    </div>
+
+    <!-- Итог по сменам -->
+    <div class="card">
+      <div class="card-label">Итог по сменам</div>
+      <div class="result-sub" id="earnedInfo"></div>
+      <div class="result" id="result">0</div>
+    </div>
   </div>
 
-  <!-- Параметры смен (сворачиваемые) -->
-  <button class="toggle-btn" id="shiftsToggle">
-    <span>Смены: значение и время засчитывания</span>
-    <span class="chev">▾</span>
+  <!-- ==================== БЛОК 2: КАРТЫ ==================== -->
+  <div class="section">
+    <div class="section-title">Карты</div>
+
+    <div class="card">
+      <div class="bank-header">
+        <div class="card-label">Банковские карты</div>
+        <div class="last-updated" id="lastUpdated"></div>
+        <button class="refresh-btn" id="refreshBtn">Обновить</button>
+      </div>
+
+      <!-- Кредитная -->
+      <div class="bank-card-name">Кредитная Сбербанк</div>
+      <div class="bank-row">
+        <div class="bank-box">
+          <label>Баланс</label>
+          <input type="number" id="creditBalance" placeholder="0">
+        </div>
+        <div class="bank-box limit">
+          <label>Лимит</label>
+          <input type="number" id="creditLimit" placeholder="0">
+        </div>
+      </div>
+      <div class="bank-big-label">Разница</div>
+      <div class="bank-big" id="creditDiff">0</div>
+
+      <hr class="bank-divider">
+
+      <!-- Дебетовая -->
+      <div class="bank-card-name">Дебетовая Сбербанк</div>
+      <div class="bank-big-label">Баланс</div>
+      <div class="bank-big" id="debitBig">0</div>
+      <input type="number" id="debitBalance" placeholder="Ввести вручную" style="width:100%; margin-top:4px;">
+    </div>
+
+    <!-- Итог по картам -->
+    <div class="card">
+      <div class="card-label">Итог по картам</div>
+      <div class="result" id="cardsTotal">0</div>
+    </div>
+  </div>
+
+  <!-- ==================== БЛОК 3: МАШИНА ==================== -->
+  <div class="section">
+    <div class="section-title">Машина</div>
+
+    <div class="card">
+      <div class="card-label">Период и сумма</div>
+      <div class="car-dates">
+        <input type="date" id="carStart">
+        <span style="color:#8e8e93;">—</span>
+        <input type="date" id="carEnd">
+      </div>
+      <div class="car-field">
+        <div class="param-name">Сумма</div>
+        <input type="number" id="carAmount" value="0">
+      </div>
+      <div class="result-sub" id="carDaysInfo"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Итог по машине (расход)</div>
+      <div class="result" id="carResult">0</div>
+    </div>
+  </div>
+
+  <!-- ==================== ДОПОЛНИТЕЛЬНЫЕ ДЕНЬГИ ==================== -->
+  <button class="toggle-btn" id="extraToggle">
+    <span>Дополнительные деньги</span>
+    <span style="display:flex; align-items:center; gap:10px;">
+      <span class="extra-value" id="extraPreview">0</span>
+      <span class="chev">▾</span>
+    </span>
   </button>
-  <div class="card collapsible" id="shiftsPanel">
-    <div class="params">
-      <div class="param-row">
-        <div class="param-name"><span class="dot blue"></span>Ночная смена</div>
-        <input type="number" id="blueValue" value="1000">
-        <input type="time" id="blueTime" value="00:00">
-      </div>
-      <div class="param-row">
-        <div class="param-name"><span class="dot red"></span>Дневная смена</div>
-        <input type="number" id="redValue" value="500">
-        <input type="time" id="redTime" value="00:00">
-      </div>
-      <div class="param-row">
-        <div class="param-name"><span class="dot yellow"></span>Полная дневная смена</div>
-        <input type="number" id="yellowValue" value="1500">
-        <input type="time" id="yellowTime" value="00:00">
-      </div>
-    </div>
-  </div>
-
-  <!-- Календарь -->
-  <div class="card">
-    <div class="cal-header">
-      <button class="arrow" id="prevBtn">‹</button>
-      <div class="cal-title" id="calTitle"></div>
-      <button class="arrow" id="nextBtn">›</button>
-    </div>
-    <div class="weekdays">
-      <div>Пн</div><div>Вт</div><div>Ср</div><div>Чт</div><div>Пт</div><div>Сб</div><div>Вс</div>
-    </div>
-    <div class="days" id="daysGrid"></div>
-  </div>
-
-  <!-- Аванс -->
-  <div class="card">
-    <div class="car-field" style="margin-bottom:0;">
-      <div class="param-name">Аванс</div>
-      <input type="number" id="advanceValue" value="0">
-    </div>
-  </div>
-
-  <!-- Итог по сменам -->
-  <div class="card">
-    <div class="card-label">Итог по сменам</div>
-    <div class="result-sub" id="earnedInfo"></div>
-    <div class="result" id="result">0</div>
-  </div>
-
-  <!-- ==================== БЛОК 2: МАШИНА ==================== -->
-  <div class="section-title">Машина</div>
-
-  <div class="card">
-    <div class="card-label">Период и сумма</div>
-    <div class="car-dates">
-      <input type="date" id="carStart">
-      <span style="color:#8e8e93;">—</span>
-      <input type="date" id="carEnd">
-    </div>
+  <div class="card collapsible" id="extraPanel">
     <div class="car-field">
-      <div class="param-name">Сумма</div>
-      <input type="number" id="carAmount" value="0">
+      <div class="param-name">Сумма (+ доход, − расход)</div>
+      <input type="number" id="extraValue" value="0">
     </div>
-    <div class="result-sub" id="carDaysInfo"></div>
-  </div>
-
-  <div class="card">
-    <div class="card-label">Итог по машине (расход)</div>
-    <div class="result" id="carResult">0</div>
-  </div>
-
-  <!-- ==================== БЛОК 3: КАРТЫ ==================== -->
-  <div class="section-title">Карты</div>
-
-  <div class="card">
-    <div class="bank-header">
-      <div class="card-label">Банковские карты</div>
-      <div class="last-updated" id="lastUpdated"></div>
-      <button class="refresh-btn" id="refreshBtn">Обновить</button>
-    </div>
-
-    <!-- Кредитная -->
-    <div class="bank-card-name">Кредитная Сбербанк</div>
-    <div class="bank-row">
-      <div class="bank-box">
-        <label>Баланс</label>
-        <input type="number" id="creditBalance" placeholder="0">
-      </div>
-      <div class="bank-box limit">
-        <label>Лимит</label>
-        <input type="number" id="creditLimit" placeholder="0">
-      </div>
-    </div>
-    <div class="bank-big-label">Разница</div>
-    <div class="bank-big" id="creditDiff">0</div>
-
-    <hr class="bank-divider">
-
-    <!-- Дебетовая -->
-    <div class="bank-card-name">Дебетовая Сбербанк</div>
-    <div class="bank-big-label">Баланс</div>
-    <div class="bank-big" id="debitBig">0</div>
-    <input type="number" id="debitBalance" placeholder="Ввести вручную" style="width:100%; margin-top:4px;">
-  </div>
-
-  <!-- Итог по картам -->
-  <div class="card">
-    <div class="card-label">Итог по картам</div>
-    <div class="result" id="cardsTotal">0</div>
   </div>
 
   <!-- ==================== ГРАНД-ИТОГ ==================== -->
@@ -486,6 +556,20 @@
     <div class="card-label">Общий итог</div>
     <div class="grand-result" id="grandTotal">0</div>
     <div class="grand-sub" id="grandBreakdown"></div>
+  </div>
+
+  <!-- ==================== РЕЗЕРВНАЯ КОПИЯ ==================== -->
+  <button class="toggle-btn" id="backupToggle">
+    <span>Резервная копия данных</span>
+    <span class="chev">▾</span>
+  </button>
+  <div class="card collapsible" id="backupPanel">
+    <div class="card-label">Сохрани файл резервной копии — если данные в браузере когда-нибудь сотрутся, восстановишь всё одной кнопкой.</div>
+    <div class="backup-row">
+      <button class="backup-btn" id="exportBtn">⬇ Экспорт</button>
+      <button class="backup-btn" id="importBtn">⬆ Импорт</button>
+      <input type="file" id="importFile" accept=".json" style="display:none;">
+    </div>
   </div>
 
 </div>
@@ -505,7 +589,8 @@
                        "Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"];
 
   // ============ СОСТОЯНИЕ ============
-  let marks = JSON.parse(localStorage.getItem("marks") || "{}");
+  let marks = {};
+  try { marks = JSON.parse(localStorage.getItem("marks") || "{}") || {}; } catch (e) { marks = {}; }
   let viewYear = null, viewMonth = null;
 
   const $ = id => document.getElementById(id);
@@ -513,11 +598,12 @@
 
   const FIELDS = ["startDate", "blueValue", "redValue", "yellowValue",
                   "blueTime", "redTime", "yellowTime",
-                  "carStart", "carEnd", "carAmount", "advanceValue",
-                  "creditLimit", "creditBalance", "debitBalance"];
+                  "carStart", "carEnd", "carAmount", "advanceValue", "salesValue",
+                  "creditLimit", "creditBalance", "debitBalance", "extraValue"];
   const DEFAULTS = { blueValue: "1000", redValue: "500", yellowValue: "1500",
                      blueTime: "00:00", redTime: "00:00", yellowTime: "00:00",
-                     carAmount: "0", advanceValue: "0" };
+                     carAmount: "0", advanceValue: "0", salesValue: "0",
+                     extraValue: "0" };
 
   FIELDS.forEach(f => {
     const saved = localStorage.getItem(f);
@@ -525,8 +611,10 @@
   });
 
   function save() {
-    localStorage.setItem("marks", JSON.stringify(marks));
-    FIELDS.forEach(f => localStorage.setItem(f, $(f).value));
+    try {
+      localStorage.setItem("marks", JSON.stringify(marks));
+      FIELDS.forEach(f => localStorage.setItem(f, $(f).value));
+    } catch (e) { /* хранилище переполнено — просто пропускаем */ }
   }
 
   function dayKey(y, m, d) {
@@ -543,7 +631,6 @@
     return n.toLocaleString("ru-RU", { maximumFractionDigits: 2 });
   }
 
-  // Подсветка: минус — красный, плюс — зелёный, ноль — нейтрально
   function paintSign(el, value) {
     el.classList.toggle("neg", value < 0);
     el.classList.toggle("pos", value > 0);
@@ -632,9 +719,9 @@
     }
   }
 
-  // ============ ПОДСЧЁТЫ (каждая функция ВОЗВРАЩАЕТ число) ============
+  // ============ ПОДСЧЁТЫ ============
 
-  // Смены: заработано минус аванс
+  // Смены: заработано + продажи − аванс
   function calcShifts() {
     let counts = { blue: 0, red: 0, yellow: 0 };
 
@@ -644,14 +731,24 @@
       if (isCounted(y, m - 1, d, color)) counts[color]++;
     }
 
+    // Строка под календарём: сколько каких смен засчитано
+    $("shiftStats").textContent =
+      "Засчитано — ночных: " + counts.blue +
+      " • дневных: " + counts.red +
+      " • полных: " + counts.yellow;
+
     const earned = counts.blue   * (Number($("blueValue").value)   || 0)
                  + counts.red    * (Number($("redValue").value)    || 0)
                  + counts.yellow * (Number($("yellowValue").value) || 0);
 
+    const sales   = Math.abs(Number($("salesValue").value)   || 0);  // всегда плюс
     const advance = Number($("advanceValue").value) || 0;
-    const final = earned - advance;
+    const final = earned + sales - advance;
 
-    $("earnedInfo").textContent = "Заработано без учёта аванса: " + fmt(earned);
+    $("earnedInfo").textContent =
+      "Заработано: " + fmt(earned) +
+      " • Продажи: +" + fmt(sales) +
+      " • Аванс: −" + fmt(advance);
     const el = $("result");
     el.textContent = fmt(final);
     paintSign(el, final);
@@ -659,7 +756,7 @@
     return final;
   }
 
-  // Машина: считаем положительную сумму, но ВОЗВРАЩАЕМ со знаком минус (расход)
+  // Машина: возвращаем отрицательное число (расход)
   function calcCar() {
     const startVal = $("carStart").value;
     const endVal   = $("carEnd").value;
@@ -703,16 +800,17 @@
     el.classList.toggle("neg", total > 0);
     el.classList.remove("pos");
 
-    return -total;   // расход — отрицательное число
+    return -total;
   }
 
-  // Кредитная: разница = баланс − лимит (может быть ±)
+  // Кредитная: разница = баланс − лимит
   function calcCreditDiff() {
     const balStr = $("creditBalance").value;
     const limStr = $("creditLimit").value;
     const diffEl = $("creditDiff");
 
-    paintSign($("creditBalance"), Number(balStr));
+    // Баланс кредитной — всегда нейтральный цвет, без подсветки
+    $("creditBalance").classList.remove("neg", "pos");
 
     if (balStr !== "" && limStr !== "") {
       const diff = Number(balStr) - Number(limStr);
@@ -726,7 +824,6 @@
     return 0;
   }
 
-  // Дебетовая: просто баланс
   function calcDebit() {
     const v = Number($("debitBalance").value) || 0;
     const el = $("debitBig");
@@ -735,14 +832,22 @@
     return v;
   }
 
-  // Карты + гранд-итог
-  function renderBank(shifts, car, creditDiff, debit) {
+  // Дополнительные деньги: знак задаётся вручную числом
+  function calcExtra() {
+    const v = Number($("extraValue").value) || 0;
+    const el = $("extraPreview");
+    el.textContent = (v > 0 ? "+" : v < 0 ? "−" : "") + fmt(Math.abs(v));
+    paintSign(el, v);
+    return v;
+  }
+
+  function renderBank(shifts, car, creditDiff, debit, extra) {
     const cardsTotal = creditDiff + debit;
     const ctEl = $("cardsTotal");
     ctEl.textContent = fmt(cardsTotal);
     paintSign(ctEl, cardsTotal);
 
-    const grand = shifts + car + cardsTotal;
+    const grand = shifts + car + cardsTotal + extra;
     const gEl = $("grandTotal");
     gEl.textContent = fmt(grand);
     paintSign(gEl, grand);
@@ -750,7 +855,8 @@
     $("grandBreakdown").textContent =
       "Смены: " + fmt(shifts) +
       " • Машина: " + fmt(car) +
-      " • Карты: " + fmt(cardsTotal);
+      " • Карты: " + fmt(cardsTotal) +
+      " • Доп: " + fmt(extra);
   }
 
   // ============ NTFY ============
@@ -796,20 +902,64 @@
     if (okCredit || okDebit) {
       $("lastUpdated").textContent = "загружено " + stamp;
       localStorage.setItem("lastBankUpdate", stamp);
-    } else {
+    } else if (showStatus) {
       $("lastUpdated").textContent = "не загрузилось " + stamp;
     }
 
     $("refreshBtn").textContent = "Обновить";
   }
 
+  // ============ РЕЗЕРВНАЯ КОПИЯ ============
+  function exportData() {
+    const data = { marks: marks };
+    FIELDS.forEach(f => data[f] = $(f).value);
+    data.exportedAt = new Date().toISOString();
+
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "backup-" + new Date().toISOString().slice(0, 10) + ".json";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  function importData(file) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(reader.result);
+        if (data.marks && typeof data.marks === "object") {
+          marks = data.marks;
+        }
+        FIELDS.forEach(f => {
+          if (data[f] !== undefined) $(f).value = data[f];
+        });
+        save();
+        renderCalendar();
+        renderAll();
+        alert("Данные восстановлены!");
+      } catch (e) {
+        alert("Не удалось прочитать файл резервной копии.");
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  $("exportBtn").addEventListener("click", exportData);
+  $("importBtn").addEventListener("click", () => $("importFile").click());
+  $("importFile").addEventListener("change", e => {
+    if (e.target.files[0]) importData(e.target.files[0]);
+    e.target.value = "";
+  });
+
   // ============ ОБЩИЙ ПЕРЕСЧЁТ ============
   function renderAll() {
     const shifts     = calcShifts();
-    const car        = calcCar();        // уже отрицательное
+    const car        = calcCar();
     const creditDiff = calcCreditDiff();
     const debit      = calcDebit();
-    renderBank(shifts, car, creditDiff, debit);
+    const extra      = calcExtra();
+    renderBank(shifts, car, creditDiff, debit, extra);
   }
 
   // ============ ПЕРЕКЛЮЧЕНИЕ МЕСЯЦЕВ ============
@@ -823,11 +973,17 @@
   $("prevBtn").addEventListener("click", () => shiftMonth(-1));
   $("nextBtn").addEventListener("click", () => shiftMonth(1));
 
-  // ============ СВОРАЧИВАНИЕ СМЕН ============
-  $("shiftsToggle").addEventListener("click", () => {
-    $("shiftsPanel").classList.toggle("open");
-    $("shiftsToggle").classList.toggle("open");
-  });
+  // ============ СВОРАЧИВАНИЕ ============
+  function setupToggle(btnId, panelId) {
+    $(btnId).addEventListener("click", () => {
+      $(panelId).classList.toggle("open");
+      $(btnId).classList.toggle("open");
+    });
+  }
+  setupToggle("shiftsToggle", "shiftsPanel");
+  setupToggle("advSalesToggle", "advSalesPanel");
+  setupToggle("extraToggle", "extraPanel");
+  setupToggle("backupToggle", "backupPanel");
 
   // ============ КНОПКА ОБНОВЛЕНИЯ ============
   $("refreshBtn").addEventListener("click", () => fetchAllBalances(true));
