@@ -39,7 +39,6 @@
     margin-bottom: 8px;
   }
 
-  /* --- Рамка вокруг целой группы --- */
   .section {
     border: 1.5px solid #d1d1d6;
     border-radius: 18px;
@@ -71,7 +70,6 @@
 
   input[type="datetime-local"] { width: 100%; }
 
-  /* --- Сворачиваемые блоки --- */
   .toggle-btn {
     width: 100%;
     display: flex;
@@ -97,7 +95,6 @@
   .collapsible { display: none; }
   .collapsible.open { display: block; }
 
-  /* --- Календарь --- */
   .cal-header {
     display: flex;
     align-items: center;
@@ -167,7 +164,6 @@
     color: #3a3a3c;
   }
 
-  /* --- Результаты --- */
   .result {
     font-size: 34px;
     font-weight: 700;
@@ -185,7 +181,6 @@
     padding-bottom: 4px;
   }
 
-  /* --- Параметры смен --- */
   .params {
     display: flex;
     flex-direction: column;
@@ -220,7 +215,6 @@
   .param-row input[type="number"] { width: 90px; }
   .param-row input[type="time"]   { width: 100px; }
 
-  /* --- Машина / Аванс / Продажи --- */
   .car-dates {
     display: flex;
     align-items: center;
@@ -243,7 +237,6 @@
 
   .car-field input[type="number"] { width: 120px; }
 
-  /* --- Банковские карты --- */
   .bank-header {
     display: flex;
     align-items: center;
@@ -339,7 +332,6 @@
     margin: 12px 0;
   }
 
-  /* --- Дополнительные деньги --- */
   .extra-value {
     font-size: 20px;
     font-weight: 700;
@@ -347,7 +339,6 @@
   .extra-value.neg { color: #ff3b30; }
   .extra-value.pos { color: #34c759; }
 
-  /* --- Гранд-итог --- */
   .grand-card {
     background: #1c1c1e;
     color: #ffffff;
@@ -375,7 +366,6 @@
     padding-top: 6px;
   }
 
-  /* --- Резервная копия --- */
   .backup-row {
     display: flex;
     gap: 8px;
@@ -393,6 +383,27 @@
     font-family: inherit;
   }
   .backup-btn:active { background: #d1d1d6; }
+
+  .sync-status {
+    margin-top: 10px;
+    font-size: 12px;
+    color: #8e8e93;
+    text-align: center;
+  }
+
+  .inner-toggle {
+    width: 100%;
+    border: 1px dashed #c7c7cc;
+    background: #fafafa;
+    border-radius: 10px;
+    padding: 10px;
+    font-size: 13px;
+    color: #6d6d72;
+    cursor: pointer;
+    font-family: inherit;
+    margin-top: 10px;
+    text-align: center;
+  }
 </style>
 </head>
 <body>
@@ -432,7 +443,6 @@
       </div>
     </div>
 
-    <!-- Календарь -->
     <div class="card">
       <div class="cal-header">
         <button class="arrow" id="prevBtn">‹</button>
@@ -446,7 +456,6 @@
       <div class="shift-stats" id="shiftStats"></div>
     </div>
 
-    <!-- Аванс и продажи (сворачиваемые одной кнопкой) -->
     <button class="toggle-btn" id="advSalesToggle">
       <span>Аванс и продажи</span>
       <span class="chev">▾</span>
@@ -462,7 +471,6 @@
       </div>
     </div>
 
-    <!-- Итог по сменам -->
     <div class="card">
       <div class="card-label">Итог по сменам</div>
       <div class="result-sub" id="earnedInfo"></div>
@@ -481,7 +489,6 @@
         <button class="refresh-btn" id="refreshBtn">Обновить</button>
       </div>
 
-      <!-- Кредитная -->
       <div class="bank-card-name">Кредитная Сбербанк</div>
       <div class="bank-row">
         <div class="bank-box">
@@ -498,14 +505,12 @@
 
       <hr class="bank-divider">
 
-      <!-- Дебетовая -->
       <div class="bank-card-name">Дебетовая Сбербанк</div>
       <div class="bank-big-label">Баланс</div>
       <div class="bank-big" id="debitBig">0</div>
       <input type="number" id="debitBalance" placeholder="Ввести вручную" style="width:100%; margin-top:4px;">
     </div>
 
-    <!-- Итог по картам -->
     <div class="card">
       <div class="card-label">Итог по картам</div>
       <div class="result" id="cardsTotal">0</div>
@@ -558,26 +563,35 @@
     <div class="grand-sub" id="grandBreakdown"></div>
   </div>
 
-  <!-- ==================== РЕЗЕРВНАЯ КОПИЯ ==================== -->
+  <!-- ==================== РЕЗЕРВНАЯ КОПИЯ И СИНХРОНИЗАЦИЯ ==================== -->
   <button class="toggle-btn" id="backupToggle">
     <span>Резервная копия данных</span>
     <span class="chev">▾</span>
   </button>
   <div class="card collapsible" id="backupPanel">
-    <div class="card-label">Сохрани файл резервной копии — если данные в браузере когда-нибудь сотрутся, восстановишь всё одной кнопкой.</div>
+    <div class="card-label">Экспорт сохраняет файл со всеми данными. Импорт восстанавливает их на этом устройстве.</div>
     <div class="backup-row">
       <button class="backup-btn" id="exportBtn">⬇ Экспорт</button>
       <button class="backup-btn" id="importBtn">⬆ Импорт</button>
       <input type="file" id="importFile" accept=".json" style="display:none;">
     </div>
+
+    <button class="inner-toggle" id="cloudToggle">☁ Перенос данных между устройствами ▾</button>
+    <div class="collapsible" id="cloudPanel" style="margin-top:8px;">
+      <div class="backup-row">
+        <button class="backup-btn" id="cloudSendBtn">⇧ Отправить в облако</button>
+        <button class="backup-btn" id="cloudGetBtn">⇩ Загрузить из облака</button>
+      </div>
+      <div class="sync-status" id="syncStatus"></div>
+    </div>
   </div>
 
 </div>
-
 <script>
   // ============ ТЕМЫ NTFY ============
   const NTFY_CREDIT = "mfllxa-iklrta-lldddrds-a74c4d5emw4q1";
   const NTFY_DEBIT  = "mtxxoy-sfvfft-fkf48ns-zfvf48n1r2dst2";
+  const NTFY_SYNC   = "sync-data-shiftcal-9f4k2m7x1q8w3z6p";
 
   // ============ НАСТРОЙКИ ============
   const MIN_MONTH = { year: 2026, month: 0 };
@@ -614,7 +628,7 @@
     try {
       localStorage.setItem("marks", JSON.stringify(marks));
       FIELDS.forEach(f => localStorage.setItem(f, $(f).value));
-    } catch (e) { /* хранилище переполнено — просто пропускаем */ }
+    } catch (e) { /* хранилище недоступно */ }
   }
 
   function dayKey(y, m, d) {
@@ -635,6 +649,128 @@
     el.classList.toggle("neg", value < 0);
     el.classList.toggle("pos", value > 0);
   }
+
+  function timeStamp() {
+    const now = new Date();
+    return now.toLocaleDateString("ru-RU") + " " +
+           now.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+  }
+
+  // ============ ПЕРЕНОС ДАННЫХ ЧЕРЕЗ ОБЛАКО (NTFY) ============
+  // Пометки дней упаковываются компактно: 2 бита на день, начиная с 01.01.2026.
+  const SYNC_START = new Date(2026, 0, 1);
+  const SYNC_DAYS  = 731;
+  const COLOR_BITS = { blue: 1, red: 2, yellow: 3 };
+  const BITS_COLOR = ["", "blue", "red", "yellow"];
+
+  function encodeMarks() {
+    const bytes = new Uint8Array(Math.ceil(SYNC_DAYS * 2 / 8));
+    for (const key in marks) {
+      const parts = key.split("-");
+      if (parts.length !== 3) continue;
+      const y = Number(parts[0]), m = Number(parts[1]), d = Number(parts[2]);
+      const idx = Math.round((new Date(y, m - 1, d) - SYNC_START) / DAY_MS);
+      if (idx < 0 || idx >= SYNC_DAYS) continue;
+      const bits = COLOR_BITS[marks[key]] || 0;
+      if (!bits) continue;
+      bytes[Math.floor(idx / 4)] |= bits << ((idx % 4) * 2);
+    }
+    let bin = "";
+    for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+    return btoa(bin);
+  }
+
+  function decodeMarks(b64) {
+    let bin;
+    try { bin = atob(b64); } catch (e) { return null; }
+    const expected = Math.ceil(SYNC_DAYS * 2 / 8);
+    if (bin.length !== expected) return null;
+    const out = {};
+    for (let idx = 0; idx < SYNC_DAYS; idx++) {
+      const bits = (bin.charCodeAt(Math.floor(idx / 4)) >> ((idx % 4) * 2)) & 3;
+      if (bits > 0) {
+        const date = new Date(SYNC_START.getTime() + idx * DAY_MS);
+        out[dayKey(date.getFullYear(), date.getMonth(), date.getDate())] = BITS_COLOR[bits];
+      }
+    }
+    return out;
+  }
+
+  function showSyncStatus(text) {
+    $("syncStatus").textContent = text;
+    localStorage.setItem("syncStatus", text);
+  }
+
+  // Отправить снимок всех данных в облако
+  async function cloudSend() {
+    const f = {};
+    FIELDS.forEach(k => f[k] = $(k).value);
+    const payload = JSON.stringify({ t: Date.now(), m: encodeMarks(), f: f });
+    try {
+      await fetch("https://ntfy.sh/" + NTFY_SYNC, { method: "POST", body: payload });
+      showSyncStatus("✅ Отправлено в облако: " + timeStamp());
+    } catch (e) {
+      showSyncStatus("❌ Ошибка отправки — проверь интернет");
+    }
+  }
+
+  // Загрузить снимок из облака (с подтверждением)
+  async function cloudGet() {
+    showSyncStatus("⏳ Проверяю облако…");
+    let data = null;
+    try {
+      const resp = await fetch("https://ntfy.sh/" + NTFY_SYNC + "/json?poll=1");
+      const text = await resp.text();
+      const lines = text.trim().split("\n").filter(l => l.trim());
+
+      for (let i = lines.length - 1; i >= 0; i--) {
+        let obj;
+        try { obj = JSON.parse(lines[i]); } catch (e) { continue; }
+        if (obj.event !== "message") continue;
+        let parsed;
+        try { parsed = JSON.parse(obj.message); } catch (e) { continue; }
+        if (!parsed || typeof parsed.t !== "number" || typeof parsed.m !== "string" || !parsed.f) continue;
+        data = parsed;
+        break;
+      }
+    } catch (e) {
+      showSyncStatus("❌ Ошибка загрузки — проверь интернет");
+      return;
+    }
+
+    if (!data) {
+      showSyncStatus("В облаке пока нет данных — сначала нажми «Отправить» на другом устройстве");
+      return;
+    }
+
+    const snapDate = new Date(data.t);
+    const snapStamp = snapDate.toLocaleDateString("ru-RU") + " " +
+                      snapDate.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+
+    if (!confirm("Заменить текущие данные на этом устройстве снимком из облака от " + snapStamp + "?")) {
+      showSyncStatus("Отменено. В облаке снимок от " + snapStamp);
+      return;
+    }
+
+    const newMarks = decodeMarks(data.m);
+    if (!newMarks) {
+      showSyncStatus("❌ Данные в облаке повреждены");
+      return;
+    }
+
+    marks = newMarks;
+    FIELDS.forEach(k => {
+      const v = data.f[k];
+      if (typeof v === "string" && v.length < 100) $(k).value = v;
+    });
+    save();
+    renderCalendar();
+    renderAll();
+    showSyncStatus("✅ Загружено из облака (снимок от " + snapStamp + ")");
+  }
+
+  $("cloudSendBtn").addEventListener("click", cloudSend);
+  $("cloudGetBtn").addEventListener("click", cloudGet);
 
   // ============ СМЕНЫ ============
   function isCounted(y, m, d, color) {
@@ -720,8 +856,6 @@
   }
 
   // ============ ПОДСЧЁТЫ ============
-
-  // Смены: заработано + продажи − аванс
   function calcShifts() {
     let counts = { blue: 0, red: 0, yellow: 0 };
 
@@ -731,7 +865,6 @@
       if (isCounted(y, m - 1, d, color)) counts[color]++;
     }
 
-    // Строка под календарём: сколько каких смен засчитано
     $("shiftStats").textContent =
       "Засчитано — ночных: " + counts.blue +
       " • дневных: " + counts.red +
@@ -741,7 +874,7 @@
                  + counts.red    * (Number($("redValue").value)    || 0)
                  + counts.yellow * (Number($("yellowValue").value) || 0);
 
-    const sales   = Math.abs(Number($("salesValue").value)   || 0);  // всегда плюс
+    const sales   = Math.abs(Number($("salesValue").value)   || 0);
     const advance = Number($("advanceValue").value) || 0;
     const final = earned + sales - advance;
 
@@ -756,7 +889,6 @@
     return final;
   }
 
-  // Машина: возвращаем отрицательное число (расход)
   function calcCar() {
     const startVal = $("carStart").value;
     const endVal   = $("carEnd").value;
@@ -803,13 +935,11 @@
     return -total;
   }
 
-  // Кредитная: разница = баланс − лимит
   function calcCreditDiff() {
     const balStr = $("creditBalance").value;
     const limStr = $("creditLimit").value;
     const diffEl = $("creditDiff");
 
-    // Баланс кредитной — всегда нейтральный цвет, без подсветки
     $("creditBalance").classList.remove("neg", "pos");
 
     if (balStr !== "" && limStr !== "") {
@@ -832,7 +962,6 @@
     return v;
   }
 
-  // Дополнительные деньги: знак задаётся вручную числом
   function calcExtra() {
     const v = Number($("extraValue").value) || 0;
     const el = $("extraPreview");
@@ -859,7 +988,7 @@
       " • Доп: " + fmt(extra);
   }
 
-  // ============ NTFY ============
+  // ============ NTFY: БАЛАНСЫ КАРТ ============
   function parseBalance(text) {
     if (!text) return null;
     const m = String(text).replace(/\s+/g, "").match(/-?\d+[.,]?\d*/);
@@ -895,21 +1024,18 @@
     save();
     renderAll();
 
-    const now = new Date();
-    const stamp = now.toLocaleDateString("ru-RU") + " " +
-                  now.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
-
     if (okCredit || okDebit) {
+      const stamp = timeStamp();
       $("lastUpdated").textContent = "загружено " + stamp;
       localStorage.setItem("lastBankUpdate", stamp);
     } else if (showStatus) {
-      $("lastUpdated").textContent = "не загрузилось " + stamp;
+      $("lastUpdated").textContent = "не загрузилось " + timeStamp();
     }
 
     $("refreshBtn").textContent = "Обновить";
   }
 
-  // ============ РЕЗЕРВНАЯ КОПИЯ ============
+  // ============ РЕЗЕРВНАЯ КОПИЯ (ФАЙЛ) ============
   function exportData() {
     const data = { marks: marks };
     FIELDS.forEach(f => data[f] = $(f).value);
@@ -929,10 +1055,16 @@
       try {
         const data = JSON.parse(reader.result);
         if (data.marks && typeof data.marks === "object") {
-          marks = data.marks;
+          const clean = {};
+          for (const key in data.marks) {
+            if (/^\d{4}-\d{2}-\d{2}$/.test(key) && COLOR_CYCLE.includes(data.marks[key])) {
+              clean[key] = data.marks[key];
+            }
+          }
+          marks = clean;
         }
         FIELDS.forEach(f => {
-          if (data[f] !== undefined) $(f).value = data[f];
+          if (typeof data[f] === "string" && data[f].length < 100) $(f).value = data[f];
         });
         save();
         renderCalendar();
@@ -984,16 +1116,17 @@
   setupToggle("advSalesToggle", "advSalesPanel");
   setupToggle("extraToggle", "extraPanel");
   setupToggle("backupToggle", "backupPanel");
-
-  // ============ КНОПКА ОБНОВЛЕНИЯ ============
-  $("refreshBtn").addEventListener("click", () => fetchAllBalances(true));
+  setupToggle("cloudToggle", "cloudPanel");
 
   // ============ СОБЫТИЯ ============
+  $("refreshBtn").addEventListener("click", () => fetchAllBalances(true));
+
   FIELDS.forEach(f => {
     $(f).addEventListener("input", () => { save(); renderCalendar(); renderAll(); });
     $(f).addEventListener("change", () => { save(); renderCalendar(); renderAll(); });
   });
 
+  // Автообновление: пересчёт + балансы карт (облако НЕ опрашиваем — только по кнопкам)
   setInterval(() => { renderCalendar(); renderAll(); fetchAllBalances(false); }, 30000);
 
   // ============ СТАРТ ============
@@ -1005,6 +1138,9 @@
 
     const lastStamp = localStorage.getItem("lastBankUpdate");
     if (lastStamp) $("lastUpdated").textContent = "загружено " + lastStamp;
+
+    const syncStamp = localStorage.getItem("syncStatus");
+    if (syncStamp) $("syncStatus").textContent = syncStamp;
 
     renderCalendar();
     renderAll();
